@@ -4,3 +4,6 @@
 
 layout: home
 ---
+
+# Le Jeu du TM?
+Si vous êtes ici, vous cherchez probablement [ceci](/bin).
