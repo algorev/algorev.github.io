@@ -14,17 +14,61 @@ ChoiceComponent.__name__ = true;
 ChoiceComponent.__super__ = React.Component;
 ChoiceComponent.prototype = $extend(React.Component.prototype,{
 	render: function() {
-		var requirementImages = this.requirements();
-		var publicName = Helpers.unescape(this.props.choice.publicName);
-		var description = Helpers.unescape(this.props.choice.description);
-		return { $$typeof : $$tre, type : "div", props : { className : "choice", children : [{ $$typeof : $$tre, type : "h2", props : { children : publicName}, key : null, ref : null},{ $$typeof : $$tre, type : "p", props : { children : description}, key : null, ref : null}]}, key : null, ref : null};
+		if(this.props.choice.visible || RequirementHelper.checkIfSatisfied(this.props.choice.requirements,this.props.variables)) {
+			var requirementImages = this.requirements();
+			var publicName = Helpers.unescape(this.props.choice.publicName);
+			var description = Helpers.unescape(this.props.choice.description);
+			var buttonComponent = this.button();
+			return { $$typeof : $$tre, type : "div", props : { className : "choice", children : [{ $$typeof : $$tre, type : "h2", props : { children : publicName}, key : null, ref : null},{ $$typeof : $$tre, type : "p", props : { children : description}, key : null, ref : null},{ $$typeof : $$tre, type : "div", props : { className : "requirements", children : [requirementImages,buttonComponent]}, key : null, ref : null}]}, key : null, ref : null};
+		}
+		return null;
 	}
 	,requirements: function() {
-		return { $$typeof : $$tre, type : "div", props : { }, key : null, ref : null};
+		var processedRequirements = RequirementHelper.checkRequirements(this.props.choice.requirements,this.props.variables);
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = processedRequirements.fulfilled;
+		while(_g1 < _g2.length) {
+			var variable = _g2[_g1];
+			++_g1;
+			_g.push(this.requirementImage(variable,true));
+		}
+		var images = _g;
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = processedRequirements.unfulfilled;
+		while(_g1 < _g2.length) {
+			var variable = _g2[_g1];
+			++_g1;
+			_g.push(this.requirementImage(variable,false));
+		}
+		images = images.concat(_g);
+		return images;
+	}
+	,requirementImage: function(variable,fulfilled) {
+		var classNames = "requirement " + (fulfilled ? "fulfilled" : "unfulfilled");
+		var imgName = Helpers.imagePath(variable.imageName);
+		var title = variable.value ? variable.onSet : variable.onUnset;
+		return { $$typeof : $$tre, type : "img", props : { title : title, src : imgName, className : classNames}, key : null, ref : null};
+	}
+	,button: function() {
+		var _gthis = this;
+		var className;
+		var callback = function() {
+			_gthis.props.variables.chooseChoice(_gthis.props.choice);
+		};
+		if(RequirementHelper.checkIfSatisfied(this.props.choice.requirements,this.props.variables)) {
+			className = "enabled";
+			return { $$typeof : $$tre, type : "button", props : { onClick : callback, className : className, children : "CHOISIR"}, key : null, ref : null};
+		} else {
+			className = "disabled";
+			return { $$typeof : $$tre, type : "button", props : { className : className, children : "CHOISIR"}, key : null, ref : null};
+		}
 	}
 });
 var Game = function(props) {
 	React.Component.call(this,props);
+	this.state = { current : CurrentView.RoomView(props.story.rooms.main), story : this.props.story};
 };
 Game.__name__ = true;
 Game.main = function() {
@@ -34,13 +78,22 @@ Game.main = function() {
 Game.__super__ = React.Component;
 Game.prototype = $extend(React.Component.prototype,{
 	render: function() {
-		return { $$typeof : $$tre, type : "div", props : { className : "container", children : [{ $$typeof : $$tre, type : StoryPanel, props : { story : this.props.story}, key : null, ref : null},{ $$typeof : $$tre, type : VariablesPanel, props : { variableStruct : this.props.story.variables}, key : null, ref : null}]}, key : null, ref : null};
+		var varkit = { variables : this.state.story.variables, nextRoom : $bind(this,this.nextRoom), chooseChoice : $bind(this,this.chooseChoice)};
+		return { $$typeof : $$tre, type : "div", props : { className : "container", children : [{ $$typeof : $$tre, type : StoryPanel, props : { variables : varkit, story : this.state.story, progress : this.state.current}, key : null, ref : null},{ $$typeof : $$tre, type : VariablesPanel, props : { variableStruct : varkit.variables}, key : null, ref : null}]}, key : null, ref : null};
+	}
+	,nextRoom: function(choice) {
+		console.log("src/game/Game.hx:37:","arrived here!");
+		this.setState({ current : CurrentView.RoomView(Reflect.field(this.state.story.rooms,choice.next)), story : this.state.story});
+	}
+	,chooseChoice: function(choice) {
+		var newVariables = SideEffectHelper.computeDiffs(choice.sideeffects,this.state.story.variables);
+		this.setState({ current : CurrentView.ChoiceView(choice), story : { rooms : this.state.story.rooms, variables : newVariables}});
 	}
 });
 var Helpers = function() { };
 Helpers.__name__ = true;
 Helpers.unescape = function(str) {
-	return StringTools.replace(StringTools.replace(str,"\\n","\n"),"\\\"","\"");
+	return str;
 };
 Helpers.imagePath = function(name) {
 	if(name == null) {
@@ -73,9 +126,26 @@ HxOverrides.substr = function(s,pos,len) {
 HxOverrides.now = function() {
 	return Date.now();
 };
+var Lambda = function() { };
+Lambda.__name__ = true;
+Lambda.fold = function(it,f,first) {
+	var x = $getIterator(it);
+	while(x.hasNext()) {
+		var x1 = x.next();
+		first = f(x1,first);
+	}
+	return first;
+};
 Math.__name__ = true;
 var Reflect = function() { };
 Reflect.__name__ = true;
+Reflect.field = function(o,field) {
+	try {
+		return o[field];
+	} catch( _g ) {
+		return null;
+	}
+};
 Reflect.getProperty = function(o,field) {
 	var tmp;
 	if(o == null) {
@@ -107,6 +177,55 @@ Reflect.fields = function(o) {
 	}
 	return a;
 };
+Reflect.copy = function(o) {
+	if(o == null) {
+		return null;
+	}
+	var o2 = { };
+	var _g = 0;
+	var _g1 = Reflect.fields(o);
+	while(_g < _g1.length) {
+		var f = _g1[_g];
+		++_g;
+		o2[f] = Reflect.field(o,f);
+	}
+	return o2;
+};
+var RequirementHelper = function() { };
+RequirementHelper.__name__ = true;
+RequirementHelper.checkRequirements = function(reqs,vars) {
+	var fulfilled = [];
+	var unfulfilled = [];
+	var shouldBe = function(variableName,expected) {
+		var variable = Reflect.field(vars.variables,variableName);
+		if(variable == null) {
+			console.log("src/game/RequirementHelper.hx:13:","Unknown variable: " + variableName);
+		}
+		if(variable.value == expected) {
+			fulfilled.push(variable);
+		} else {
+			unfulfilled.push(variable);
+		}
+	};
+	var _g = 0;
+	var _g1 = reqs.yes;
+	while(_g < _g1.length) {
+		var req = _g1[_g];
+		++_g;
+		shouldBe(req,true);
+	}
+	var _g = 0;
+	var _g1 = reqs.no;
+	while(_g < _g1.length) {
+		var req = _g1[_g];
+		++_g;
+		shouldBe(req,false);
+	}
+	return { fulfilled : fulfilled, unfulfilled : unfulfilled};
+};
+RequirementHelper.checkIfSatisfied = function(requirements,variables) {
+	return RequirementHelper.checkRequirements(requirements,variables).unfulfilled.length == 0;
+};
 var ResultPanel = function(props) {
 	React.Component.call(this,props);
 };
@@ -114,9 +233,14 @@ ResultPanel.__name__ = true;
 ResultPanel.__super__ = React.Component;
 ResultPanel.prototype = $extend(React.Component.prototype,{
 	render: function() {
+		var _gthis = this;
 		var info = this.heading();
 		var consequences = this.sideEffects();
-		return { $$typeof : $$tre, type : "div", props : { id : "results", children : [info,consequences]}, key : null, ref : null};
+		var callback = function() {
+			return _gthis.props.variables.nextRoom(_gthis.props.choice);
+		};
+		var button = this.props.choice.next != null ? { $$typeof : $$tre, type : "button", props : { onClick : callback, className : "enabled", children : "CONTINUER"}, key : null, ref : null} : { $$typeof : $$tre, type : "div", props : { }, key : null, ref : null};
+		return { $$typeof : $$tre, type : "div", props : { id : "results", children : [info,{ $$typeof : $$tre, type : "div", props : { id : "consequences", children : [consequences,button]}, key : null, ref : null}]}, key : null, ref : null};
 	}
 	,heading: function() {
 		var choiceName = Helpers.unescape(this.props.choice.publicName);
@@ -124,7 +248,41 @@ ResultPanel.prototype = $extend(React.Component.prototype,{
 		return { $$typeof : $$tre, type : "div", props : { id : "roomInfo", children : [{ $$typeof : $$tre, type : "h2", props : { children : choiceName}, key : null, ref : null},{ $$typeof : $$tre, type : "p", props : { children : body}, key : null, ref : null}]}, key : null, ref : null};
 	}
 	,sideEffects: function() {
-		return { $$typeof : $$tre, type : "div", props : { id : "consequences"}, key : null, ref : null};
+		var _gthis = this;
+		var _this = Reflect.fields(this.props.choice.sideeffects);
+		var result = new Array(_this.length);
+		var _g = 0;
+		var _g1 = _this.length;
+		while(_g < _g1) {
+			var i = _g++;
+			result[i] = Reflect.field(_gthis.props.choice.sideeffects,_this[i]);
+		}
+		var _this = Lambda.fold(result,function(current,acc) {
+			return acc.concat(current);
+		},[]);
+		var result = new Array(_this.length);
+		var _g = 0;
+		var _g1 = _this.length;
+		while(_g < _g1) {
+			var i = _g++;
+			result[i] = Reflect.field(_gthis.props.variables.variables,_this[i]);
+		}
+		var _this = result;
+		var f = $bind(this,this.sideEffectDesc);
+		var result = new Array(_this.length);
+		var _g = 0;
+		var _g1 = _this.length;
+		while(_g < _g1) {
+			var i = _g++;
+			result[i] = f(_this[i]);
+		}
+		var consequenceComponents = result;
+		return consequenceComponents;
+	}
+	,sideEffectDesc: function(variable) {
+		var text = variable.value ? variable.onSet : variable.onUnset;
+		var imageName = Helpers.imagePath(variable.imageName);
+		return { $$typeof : $$tre, type : "div", props : { className : "consequence", children : [{ $$typeof : $$tre, type : "img", props : { src : imageName}, key : null, ref : null},{ $$typeof : $$tre, type : "p", props : { className : "consequenceText", children : text}, key : null, ref : null}]}, key : null, ref : null};
 	}
 });
 var RoomPanel = function(props) {
@@ -134,6 +292,7 @@ RoomPanel.__name__ = true;
 RoomPanel.__super__ = React.Component;
 RoomPanel.prototype = $extend(React.Component.prototype,{
 	render: function() {
+		var _gthis = this;
 		var roomDesc = this.heading();
 		var _this = this.props.room.choices;
 		var result = new Array(_this.length);
@@ -141,7 +300,7 @@ RoomPanel.prototype = $extend(React.Component.prototype,{
 		var _g1 = _this.length;
 		while(_g < _g1) {
 			var i = _g++;
-			result[i] = { $$typeof : $$tre, type : ChoiceComponent, props : { choice : _this[i]}, key : null, ref : null};
+			result[i] = { $$typeof : $$tre, type : ChoiceComponent, props : { variables : _gthis.props.variables, choice : _this[i]}, key : null, ref : null};
 		}
 		var choiceElements = result;
 		return { $$typeof : $$tre, type : "div", props : { id : "room", children : [roomDesc,{ $$typeof : $$tre, type : "div", props : { id : "choiceList", children : choiceElements}, key : null, ref : null}]}, key : null, ref : null};
@@ -152,52 +311,69 @@ RoomPanel.prototype = $extend(React.Component.prototype,{
 		return { $$typeof : $$tre, type : "div", props : { id : "roomInfo", children : [{ $$typeof : $$tre, type : "h1", props : { children : publicName}, key : null, ref : null},{ $$typeof : $$tre, type : "p", props : { children : description}, key : null, ref : null}]}, key : null, ref : null};
 	}
 });
+var SideEffectHelper = function() { };
+SideEffectHelper.__name__ = true;
+SideEffectHelper.computeDiffs = function(effects,vars) {
+	var nextVars = Reflect.copy(vars);
+	var toEach = function(names,operation) {
+		var _g = 0;
+		while(_g < names.length) {
+			var name = names[_g];
+			++_g;
+			var newVariable = Reflect.copy(Reflect.field(vars,name));
+			newVariable.value = operation(newVariable.value);
+			nextVars[name] = newVariable;
+		}
+	};
+	toEach(effects.set,function(_) {
+		return true;
+	});
+	toEach(effects.unset,function(_) {
+		return false;
+	});
+	toEach(effects.flip,function(val) {
+		return !val;
+	});
+	return nextVars;
+};
 var StoryPanel = function(props) {
-	this.stage = Stage.RoomStage;
 	React.Component.call(this,props);
+	this.state = this.props.progress;
 };
 StoryPanel.__name__ = true;
 StoryPanel.__super__ = React.Component;
 StoryPanel.prototype = $extend(React.Component.prototype,{
-	render: function() {
-		var mainElement = this.stage == Stage.RoomStage ? { $$typeof : $$tre, type : RoomPanel, props : { room : this.props.story.rooms.main}, key : null, ref : null} : { $$typeof : $$tre, type : ResultPanel, props : { room : this.props.story.rooms.main.choices[0]}, key : null, ref : null};
+	componentDidUpdate: function(prevProps,_) {
+		if(prevProps != this.props) {
+			this.setState(this.props.progress);
+		}
+	}
+	,render: function() {
+		var mainElement;
+		var _g = this.state;
+		switch(_g._hx_index) {
+		case 0:
+			var room = _g.room;
+			mainElement = { $$typeof : $$tre, type : RoomPanel, props : { variables : this.props.variables, room : room}, key : null, ref : null};
+			break;
+		case 1:
+			var choice = _g.choice;
+			mainElement = { $$typeof : $$tre, type : ResultPanel, props : { variables : this.props.variables, choice : choice}, key : null, ref : null};
+			break;
+		}
 		return { $$typeof : $$tre, type : "div", props : { id : "story", children : mainElement}, key : null, ref : null};
 	}
 });
-var Stage = $hxEnums["Stage"] = { __ename__:true,__constructs__:null
-	,RoomStage: {_hx_name:"RoomStage",_hx_index:0,__enum__:"Stage",toString:$estr}
-	,ResultStage: {_hx_name:"ResultStage",_hx_index:1,__enum__:"Stage",toString:$estr}
-};
-Stage.__constructs__ = [Stage.RoomStage,Stage.ResultStage];
-var StringTools = function() { };
-StringTools.__name__ = true;
-StringTools.replace = function(s,sub,by) {
-	return s.split(sub).join(by);
-};
 var Types = function() { };
 Types.__name__ = true;
+var CurrentView = $hxEnums["CurrentView"] = { __ename__:true,__constructs__:null
+	,RoomView: ($_=function(room) { return {_hx_index:0,room:room,__enum__:"CurrentView",toString:$estr}; },$_._hx_name="RoomView",$_.__params__ = ["room"],$_)
+	,ChoiceView: ($_=function(choice) { return {_hx_index:1,choice:choice,__enum__:"CurrentView",toString:$estr}; },$_._hx_name="ChoiceView",$_.__params__ = ["choice"],$_)
+};
+CurrentView.__constructs__ = [CurrentView.RoomView,CurrentView.ChoiceView];
 var VariablesPanel = function(props) {
 	React.Component.call(this,props);
-	var variableList = [];
-	var _g = 0;
-	var _g1 = Reflect.fields(props.variableStruct);
-	while(_g < _g1.length) {
-		var field = _g1[_g];
-		++_g;
-		variableList.push(Reflect.getProperty(props.variableStruct,field));
-	}
-	console.log("src/game/VariablesPanel.hx:17:",variableList);
-	var _g = [];
-	var _g1 = 0;
-	var _g2 = variableList;
-	while(_g1 < _g2.length) {
-		var v = _g2[_g1];
-		++_g1;
-		if(v.value) {
-			_g.push(v);
-		}
-	}
-	this.variableList = _g;
+	this.state = { variableStruct : this.getVariableList()};
 };
 VariablesPanel.__name__ = true;
 VariablesPanel.makeVariableImage = function(variable) {
@@ -206,18 +382,35 @@ VariablesPanel.makeVariableImage = function(variable) {
 };
 VariablesPanel.__super__ = React.Component;
 VariablesPanel.prototype = $extend(React.Component.prototype,{
-	render: function() {
-		var _this = this.variableList;
-		var f = VariablesPanel.makeVariableImage;
-		var result = new Array(_this.length);
-		var _g = 0;
-		var _g1 = _this.length;
-		while(_g < _g1) {
-			var i = _g++;
-			result[i] = f(_this[i]);
+	componentDidUpdate: function(prevProps,_) {
+		if(this.props != prevProps) {
+			this.setState({ variableStruct : this.getVariableList()});
 		}
-		var variableElements = result;
+	}
+	,render: function() {
+		var variableElements = this.state.variableStruct.map(VariablesPanel.makeVariableImage);
 		return { $$typeof : $$tre, type : "div", props : { id : "inventory", children : variableElements}, key : null, ref : null};
+	}
+	,getVariableList: function() {
+		var variableList = [];
+		var _g = 0;
+		var _g1 = Reflect.fields(this.props.variableStruct);
+		while(_g < _g1.length) {
+			var field = _g1[_g];
+			++_g;
+			variableList.push(Reflect.getProperty(this.props.variableStruct,field));
+		}
+		var _g = [];
+		var _g1 = 0;
+		var _g2 = variableList;
+		while(_g1 < _g2.length) {
+			var v = _g2[_g1];
+			++_g1;
+			if(v.value) {
+				_g.push(v);
+			}
+		}
+		return _g;
 	}
 });
 var haxe_Exception = function(message,previous,native) {
@@ -552,8 +745,15 @@ js_Boot.__string_rec = function(o,s) {
 		return String(o);
 	}
 };
+var react_Partial = function() { };
+react_Partial.__name__ = true;
+var react_PartialMacro = function() { };
+react_PartialMacro.__name__ = true;
 var react_ReactMacro = function() { };
 react_ReactMacro.__name__ = true;
+function $getIterator(o) { if( o instanceof Array ) return new haxe_iterators_ArrayIterator(o); else return o.iterator(); }
+function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $global.$haxeUID++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = m.bind(o); o.hx__closures__[m.__id__] = f; } return f; }
+$global.$haxeUID |= 0;
 var $$tre = (typeof Symbol === "function" && Symbol.for && Symbol.for("react.element")) || 0xeac7;
 if(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : false) {
 	HxOverrides.now = performance.now.bind(performance);
@@ -561,7 +761,7 @@ if(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : 
 if( String.fromCodePoint == null ) String.fromCodePoint = function(c) { return c < 0x10000 ? String.fromCharCode(c) : String.fromCharCode((c>>10)+0xD7C0)+String.fromCharCode((c&0x3FF)+0xDC00); }
 String.__name__ = true;
 Array.__name__ = true;
-haxe_Resource.content = [{ name : "storyText", data : "ew0KICAgICJ2YXJpYWJsZXMiOiB7DQogICAgICAgICJtYWludmFyIjogew0KICAgICAgICAgICAgImltYWdlTmFtZSI6IG51bGwsDQogICAgICAgICAgICAib25TZXQiOiAiVW5lIHZhcmlhYmxlIGRhbnMgbGUgZmljaGllciBwcmluY2lwYWwuIiwNCiAgICAgICAgICAgICJvblVuc2V0IjogIlVuIG1ldXJ0cmUhIiwNCiAgICAgICAgICAgICJ2YWx1ZSI6IHRydWUNCiAgICAgICAgfSwNCiAgICAgICAgInRlc3R2YXIiOiB7DQogICAgICAgICAgICAiaW1hZ2VOYW1lIjogbnVsbCwNCiAgICAgICAgICAgICJvblNldCI6ICJWb3VzIGF2ZXogbWFpbnRlbmFudCB1bmUgdmFyaWFibGUgZGUgdGVzdCEiLA0KICAgICAgICAgICAgIm9uVW5zZXQiOiAiVm91cyBuJ2F2ZXogUExVUyBkZSB2YXJpYWJsZSBkZSB0ZXN0ISIsDQogICAgICAgICAgICAidmFsdWUiOiB0cnVlDQogICAgICAgIH0sDQogICAgICAgICJhbm90aGVydmFyIjogew0KICAgICAgICAgICAgImltYWdlTmFtZSI6IG51bGwsDQogICAgICAgICAgICAib25TZXQiOiAiVW5lIGF1dHJlIHZhcmlhYmxlIHZpZW50IMOgIHZvdXMhIiwNCiAgICAgICAgICAgICJvblVuc2V0IjogIkV0dHR0IGVsbGUgbidlc3QgcGFzIGzDoCEiLA0KICAgICAgICAgICAgInZhbHVlIjogdHJ1ZQ0KICAgICAgICB9DQogICAgfSwNCiAgICAicm9vbXMiOiB7DQogICAgICAgICJtYWluIjogew0KICAgICAgICAgICAgInB1YmxpY05hbWUiOiAiTGUgZMOpYnV0IiwNCiAgICAgICAgICAgICJkZXNjcmlwdGlvbiI6ICJBaGFoYWggbG9sLiIsDQogICAgICAgICAgICAiY2hvaWNlcyI6IFsNCiAgICAgICAgICAgICAgICB7DQogICAgICAgICAgICAgICAgICAgICJwdWJsaWNOYW1lIjogIkZhaXJlIHVuIHRydWMiLA0KICAgICAgICAgICAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiSnNwIG1vaS4iLA0KICAgICAgICAgICAgICAgICAgICAiYm9keSI6ICJMZSBjaMOidGVhdSBkZSBzZW5hcmNsZW5zIGVzdCBlbiBhZnJpcXVlIGR1IHN1ZC5cblNpLCBzaSwgamUgdm91cyBhc3N1cmUuIiwNCiAgICAgICAgICAgICAgICAgICAgImltYWdlTmFtZSI6ICJyb29tSW1hZ2UiLA0KICAgICAgICAgICAgICAgICAgICAicmVxdWlyZW1lbnRzIjogew0KICAgICAgICAgICAgICAgICAgICAgICAgInllcyI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgIm5vIjogWw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICJtYWludmFyIg0KICAgICAgICAgICAgICAgICAgICAgICAgXQ0KICAgICAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgICAgICAidmlzaWJsZSI6IHRydWUsDQogICAgICAgICAgICAgICAgICAgICJzaWRlZWZmZWN0cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJzZXQiOiBbDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgImFub3RoZXJ2YXIiDQogICAgICAgICAgICAgICAgICAgICAgICBdLA0KICAgICAgICAgICAgICAgICAgICAgICAgInVuc2V0IjogWw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ0ZXN0dmFyIg0KICAgICAgICAgICAgICAgICAgICAgICAgXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJmbGlwIjogW10NCiAgICAgICAgICAgICAgICAgICAgfSwNCiAgICAgICAgICAgICAgICAgICAgIm5leHQiOiAidGVzdFJvb20iDQogICAgICAgICAgICAgICAgfQ0KICAgICAgICAgICAgXQ0KICAgICAgICB9LA0KICAgICAgICAidGVzdFJvb20iOiB7DQogICAgICAgICAgICAicHVibGljTmFtZSI6ICJMYSBjaGFtYnJlIGRlIHRvcnR1cmUiLA0KICAgICAgICAgICAgImRlc2NyaXB0aW9uIjogIlVuZSBwacOoY2UgZGUgdGVzdC4gTGVzIG11cnMgc29udCBibGFuY3MuIFwiSmUgbidhaW1lIHBhcyBjZXQgZW5kcm9pdFwiLCBkaXQgbGUgcHLDqnRyZS4iLA0KICAgICAgICAgICAgImNob2ljZXMiOiBbDQogICAgICAgICAgICAgICAgew0KICAgICAgICAgICAgICAgICAgICAicHVibGljTmFtZSI6ICJSZWdhcmRlciBhbGVudG91cnMuIiwNCiAgICAgICAgICAgICAgICAgICAgImRlc2NyaXB0aW9uIjogIlZveW9ucyB2b2lyLiBRdWUgcG91cnJhaXQtaWwgeSBhdm9pciBkYW5zIGNldHRlIHBpw6hjZT8iLA0KICAgICAgICAgICAgICAgICAgICAiYm9keSI6ICJMYSBwacOoY2UgZXN0IHNvbWJyZS4gTGVzIG11cnMgc29udCBibGFuY3MuIElsIHkgYSBkZXMgYXJtZXMgc3VyIGxlcyBtdXJzLlxuXCJKZSBuJ2FpbWUgcGFzIGNldCBlbmRyb2l0XCIsIGRpdCBsZSBwcsOqdHJlLiBcIkxldXIgc3VwcG9ydCB1bmljb2RlIGVzdCBudWwuXCIgSWwgYSBiaWVuIHJhaXNvbi4gSGFsdGUgYXV4IG3DqWNyw6lhbnRzLiIsDQogICAgICAgICAgICAgICAgICAgICJpbWFnZU5hbWUiOiAicm9vbUltYWdlIiwNCiAgICAgICAgICAgICAgICAgICAgInJlcXVpcmVtZW50cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJ5ZXMiOiBbDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgInRlc3R2YXIiDQogICAgICAgICAgICAgICAgICAgICAgICBdLA0KICAgICAgICAgICAgICAgICAgICAgICAgIm5vIjogWw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICJhbm90aGVydmFyIg0KICAgICAgICAgICAgICAgICAgICAgICAgXQ0KICAgICAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgICAgICAidmlzaWJsZSI6IHRydWUsDQogICAgICAgICAgICAgICAgICAgICJzaWRlZWZmZWN0cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJzZXQiOiBbDQogICAgICAgICAgICAgICAgICAgICAgICAgICAgImFub3RoZXJ2YXIiDQogICAgICAgICAgICAgICAgICAgICAgICBdLA0KICAgICAgICAgICAgICAgICAgICAgICAgInVuc2V0IjogWw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ0ZXN0dmFyIg0KICAgICAgICAgICAgICAgICAgICAgICAgXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJmbGlwIjogW10NCiAgICAgICAgICAgICAgICAgICAgfSwNCiAgICAgICAgICAgICAgICAgICAgIm5leHQiOiAib3RoZXJSb29tIg0KICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgew0KICAgICAgICAgICAgICAgICAgICAicHVibGljTmFtZSI6ICJSZXBhcnRpci4iLA0KICAgICAgICAgICAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiQydlc3QgdHJvcCBkYW5nZXJldXguIEFsbG9ucy15LiIsDQogICAgICAgICAgICAgICAgICAgICJib2R5IjogIklsIGZhaXQgc29tYnJlLiBVbmUgc2V1bGUgY2hvc2UgZXN0IHPDu3JlOiB2b3VzIG4nw6p0ZXMgcGFzIMOgIGwnYWlzZS4gTGUgcHLDqnRyZSBub24gcGx1cywgZCdhaWxsZXVycy4iLA0KICAgICAgICAgICAgICAgICAgICAiaW1hZ2VOYW1lIjogInJvb21JbWFnZSIsDQogICAgICAgICAgICAgICAgICAgICJyZXF1aXJlbWVudHMiOiB7DQogICAgICAgICAgICAgICAgICAgICAgICAieWVzIjogW10sDQogICAgICAgICAgICAgICAgICAgICAgICAibm8iOiBbXQ0KICAgICAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgICAgICAidmlzaWJsZSI6IHRydWUsDQogICAgICAgICAgICAgICAgICAgICJzaWRlZWZmZWN0cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJzZXQiOiBbXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJ1bnNldCI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgImZsaXAiOiBbXQ0KICAgICAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgICAgICAibmV4dCI6ICJ0ZXN0Um9vbSINCiAgICAgICAgICAgICAgICB9DQogICAgICAgICAgICBdDQogICAgICAgIH0NCiAgICB9DQp9"}];
+haxe_Resource.content = [{ name : "storyText", data : "ew0KICAgICJ2YXJpYWJsZXMiOiB7DQogICAgICAgICJ0ZXN0dmFyIjogew0KICAgICAgICAgICAgImltYWdlTmFtZSI6IG51bGwsDQogICAgICAgICAgICAib25TZXQiOiAiVm91cyBhdmV6IG1haW50ZW5hbnQgdW5lIHZhcmlhYmxlIGRlIHRlc3QhIiwNCiAgICAgICAgICAgICJvblVuc2V0IjogIlZvdXMgbidhdmV6IFBMVVMgZGUgdmFyaWFibGUgZGUgdGVzdCEiLA0KICAgICAgICAgICAgInZhbHVlIjogdHJ1ZQ0KICAgICAgICB9LA0KICAgICAgICAiYW5vdGhlcnZhciI6IHsNCiAgICAgICAgICAgICJpbWFnZU5hbWUiOiBudWxsLA0KICAgICAgICAgICAgIm9uU2V0IjogIlVuZSBhdXRyZSB2YXJpYWJsZSB2aWVudCDDoCB2b3VzISIsDQogICAgICAgICAgICAib25VbnNldCI6ICJFdHR0dCBlbGxlIG4nZXN0IHBhcyBsw6AhIiwNCiAgICAgICAgICAgICJ2YWx1ZSI6IHRydWUNCiAgICAgICAgfQ0KICAgIH0sDQogICAgInJvb21zIjogew0KICAgICAgICAiY2hhcGl0cmUxIjogew0KICAgICAgICAgICAgInB1YmxpY05hbWUiOiAiTGEgY2hhbWJyZSBkZSB0b3J0dXJlIiwNCiAgICAgICAgICAgICJkZXNjcmlwdGlvbiI6ICJVbmUgcGnDqGNlIGRlIHRlc3QuIExlcyBtdXJzIHNvbnQgYmxhbmNzLiBcIkplIG4nYWltZSBwYXMgY2V0IGVuZHJvaXRcIiwgZGl0IGxlIHByw6p0cmUuIiwNCiAgICAgICAgICAgICJjaG9pY2VzIjogWw0KICAgICAgICAgICAgICAgIHsNCiAgICAgICAgICAgICAgICAgICAgInB1YmxpY05hbWUiOiAiUmVnYXJkZXIgYWxlbnRvdXJzLiIsDQogICAgICAgICAgICAgICAgICAgICJkZXNjcmlwdGlvbiI6ICJWb3lvbnMgdm9pci4gUXVlIHBvdXJyYWl0LWlsIHkgYXZvaXIgZGFucyBjZXR0ZSBwacOoY2U/IiwNCiAgICAgICAgICAgICAgICAgICAgImJvZHkiOiAiTGEgcGnDqGNlIGVzdCBzb21icmUuIExlcyBtdXJzIHNvbnQgYmxhbmNzLiBJbCB5IGEgZGVzIGFybWVzIHN1ciBsZXMgbXVycy5cblwiSmUgbidhaW1lIHBhcyBjZXQgZW5kcm9pdFwiLCBkaXQgbGUgcHLDqnRyZS4gXCJMZXVyIHN1cHBvcnQgdW5pY29kZSBlc3QgbnVsLlwiIElsIGEgYmllbiByYWlzb24uIEhhbHRlIGF1eCBtw6ljcsOpYW50cy4iLA0KICAgICAgICAgICAgICAgICAgICAiaW1hZ2VOYW1lIjogInJvb21JbWFnZSIsDQogICAgICAgICAgICAgICAgICAgICJyZXF1aXJlbWVudHMiOiB7DQogICAgICAgICAgICAgICAgICAgICAgICAieWVzIjogWw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICJ0ZXN0dmFyIg0KICAgICAgICAgICAgICAgICAgICAgICAgXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJubyI6IFsNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAiYW5vdGhlcnZhciINCiAgICAgICAgICAgICAgICAgICAgICAgIF0NCiAgICAgICAgICAgICAgICAgICAgfSwNCiAgICAgICAgICAgICAgICAgICAgInZpc2libGUiOiB0cnVlLA0KICAgICAgICAgICAgICAgICAgICAic2lkZWVmZmVjdHMiOiB7DQogICAgICAgICAgICAgICAgICAgICAgICAic2V0IjogWw0KICAgICAgICAgICAgICAgICAgICAgICAgICAgICJhbm90aGVydmFyIg0KICAgICAgICAgICAgICAgICAgICAgICAgXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJ1bnNldCI6IFsNCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAidGVzdHZhciINCiAgICAgICAgICAgICAgICAgICAgICAgIF0sDQogICAgICAgICAgICAgICAgICAgICAgICAiZmxpcCI6IFtdDQogICAgICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgICAgICJuZXh0IjogIm90aGVyUm9vbSINCiAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgIHsNCiAgICAgICAgICAgICAgICAgICAgInB1YmxpY05hbWUiOiAiUmVwYXJ0aXIuIiwNCiAgICAgICAgICAgICAgICAgICAgImRlc2NyaXB0aW9uIjogIkMnZXN0IHRyb3AgZGFuZ2VyZXV4LiBBbGxvbnMteS4iLA0KICAgICAgICAgICAgICAgICAgICAiYm9keSI6ICJJbCBmYWl0IHNvbWJyZS4gVW5lIHNldWxlIGNob3NlIGVzdCBzw7tyZTogdm91cyBuJ8OqdGVzIHBhcyDDoCBsJ2Fpc2UuIExlIHByw6p0cmUgbm9uIHBsdXMsIGQnYWlsbGV1cnMuIiwNCiAgICAgICAgICAgICAgICAgICAgImltYWdlTmFtZSI6ICJyb29tSW1hZ2UiLA0KICAgICAgICAgICAgICAgICAgICAicmVxdWlyZW1lbnRzIjogew0KICAgICAgICAgICAgICAgICAgICAgICAgInllcyI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgIm5vIjogW10NCiAgICAgICAgICAgICAgICAgICAgfSwNCiAgICAgICAgICAgICAgICAgICAgInZpc2libGUiOiBmYWxzZSwNCiAgICAgICAgICAgICAgICAgICAgInNpZGVlZmZlY3RzIjogew0KICAgICAgICAgICAgICAgICAgICAgICAgInNldCI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgInVuc2V0IjogW10sDQogICAgICAgICAgICAgICAgICAgICAgICAiZmxpcCI6IFtdDQogICAgICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgICAgICJuZXh0IjogInRlc3RSb29tIg0KICAgICAgICAgICAgICAgIH0NCiAgICAgICAgICAgIF0NCiAgICAgICAgfSwNCiAgICAgICAgIm1haW4iOiB7DQogICAgICAgICAgICAicHVibGljTmFtZSI6ICJERUJVRyBNQUlOIiwNCiAgICAgICAgICAgICJkZXNjcmlwdGlvbiI6ICJQb2ludCBkJ2VudHLDqWUgZGUgZMOpYm9ndWFnZSBkdSBqZXUuIEVubGV2ZXIgcG91ciBsYSByZWxlYXNlLiIsDQogICAgICAgICAgICAiY2hvaWNlcyI6IFsNCiAgICAgICAgICAgICAgICB7DQogICAgICAgICAgICAgICAgICAgICJwdWJsaWNOYW1lIjogIkNoYXBpdHJlIDEiLA0KICAgICAgICAgICAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiTGFuY2VyIGxlIGNoYXBpdHJlIDEuIiwNCiAgICAgICAgICAgICAgICAgICAgImJvZHkiOiAiVm91cyBhdmV6IGxhbmPDqSBsZSBjaGFwaXRyZSAxLiIsDQogICAgICAgICAgICAgICAgICAgICJpbWFnZU5hbWUiOiBudWxsLA0KICAgICAgICAgICAgICAgICAgICAicmVxdWlyZW1lbnRzIjogew0KICAgICAgICAgICAgICAgICAgICAgICAgInllcyI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgIm5vIjogW10NCiAgICAgICAgICAgICAgICAgICAgfSwNCiAgICAgICAgICAgICAgICAgICAgInZpc2libGUiOiB0cnVlLA0KICAgICAgICAgICAgICAgICAgICAic2lkZWVmZmVjdHMiOiB7DQogICAgICAgICAgICAgICAgICAgICAgICAic2V0IjogW10sDQogICAgICAgICAgICAgICAgICAgICAgICAidW5zZXQiOiBbXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJmbGlwIjogW10NCiAgICAgICAgICAgICAgICAgICAgfSwNCiAgICAgICAgICAgICAgICAgICAgIm5leHQiOiAiY2hhcGl0cmUxIg0KICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgew0KICAgICAgICAgICAgICAgICAgICAicHVibGljTmFtZSI6ICJDaGFwaXRyZSAyIiwNCiAgICAgICAgICAgICAgICAgICAgImRlc2NyaXB0aW9uIjogIkxhbmNlciBsZSBjaGFwaXRyZSAyLiIsDQogICAgICAgICAgICAgICAgICAgICJib2R5IjogIlZvdXMgYXZleiBsYW5jw6kgbGUgY2hhcGl0cmUgMi4iLA0KICAgICAgICAgICAgICAgICAgICAiaW1hZ2VOYW1lIjogbnVsbCwNCiAgICAgICAgICAgICAgICAgICAgInJlcXVpcmVtZW50cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJ5ZXMiOiBbXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJubyI6IFtdDQogICAgICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgICAgICJ2aXNpYmxlIjogdHJ1ZSwNCiAgICAgICAgICAgICAgICAgICAgInNpZGVlZmZlY3RzIjogew0KICAgICAgICAgICAgICAgICAgICAgICAgInNldCI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgInVuc2V0IjogW10sDQogICAgICAgICAgICAgICAgICAgICAgICAiZmxpcCI6IFtdDQogICAgICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgICAgICJuZXh0IjogbnVsbA0KICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgew0KICAgICAgICAgICAgICAgICAgICAicHVibGljTmFtZSI6ICJDaGFwaXRyZSAzIiwNCiAgICAgICAgICAgICAgICAgICAgImRlc2NyaXB0aW9uIjogIkxhbmNlciBsZSBjaGFwaXRyZSAzLiIsDQogICAgICAgICAgICAgICAgICAgICJib2R5IjogIlZvdXMgYXZleiBsYW5jw6kgbGUgY2hhcGl0cmUgMy4iLA0KICAgICAgICAgICAgICAgICAgICAiaW1hZ2VOYW1lIjogbnVsbCwNCiAgICAgICAgICAgICAgICAgICAgInJlcXVpcmVtZW50cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJ5ZXMiOiBbXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJubyI6IFtdDQogICAgICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgICAgICJ2aXNpYmxlIjogdHJ1ZSwNCiAgICAgICAgICAgICAgICAgICAgInNpZGVlZmZlY3RzIjogew0KICAgICAgICAgICAgICAgICAgICAgICAgInNldCI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgInVuc2V0IjogW10sDQogICAgICAgICAgICAgICAgICAgICAgICAiZmxpcCI6IFtdDQogICAgICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgICAgICJuZXh0IjogbnVsbA0KICAgICAgICAgICAgICAgIH0sDQogICAgICAgICAgICAgICAgew0KICAgICAgICAgICAgICAgICAgICAicHVibGljTmFtZSI6ICLDiXBpbG9ndWUiLA0KICAgICAgICAgICAgICAgICAgICAiZGVzY3JpcHRpb24iOiAiTGFuY2VyIGwnw6lwaWxvZ3VlLiIsDQogICAgICAgICAgICAgICAgICAgICJib2R5IjogIlZvdXMgYXZleiBsYW5jw6kgbCfDqXBpbG9ndWUuIiwNCiAgICAgICAgICAgICAgICAgICAgImltYWdlTmFtZSI6IG51bGwsDQogICAgICAgICAgICAgICAgICAgICJyZXF1aXJlbWVudHMiOiB7DQogICAgICAgICAgICAgICAgICAgICAgICAieWVzIjogW10sDQogICAgICAgICAgICAgICAgICAgICAgICAibm8iOiBbXQ0KICAgICAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgICAgICAidmlzaWJsZSI6IHRydWUsDQogICAgICAgICAgICAgICAgICAgICJzaWRlZWZmZWN0cyI6IHsNCiAgICAgICAgICAgICAgICAgICAgICAgICJzZXQiOiBbXSwNCiAgICAgICAgICAgICAgICAgICAgICAgICJ1bnNldCI6IFtdLA0KICAgICAgICAgICAgICAgICAgICAgICAgImZsaXAiOiBbXQ0KICAgICAgICAgICAgICAgICAgICB9LA0KICAgICAgICAgICAgICAgICAgICAibmV4dCI6IG51bGwNCiAgICAgICAgICAgICAgICB9DQogICAgICAgICAgICBdDQogICAgICAgIH0NCiAgICB9DQp9"}];
 js_Boot.__toStr = ({ }).toString;
 ChoiceComponent.displayName = "ChoiceComponent";
 Game.displayName = "Game";
@@ -572,4 +772,4 @@ VariablesPanel.displayName = "VariablesPanel";
 haxe_crypto_Base64.CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 haxe_crypto_Base64.BYTES = haxe_io_Bytes.ofString(haxe_crypto_Base64.CHARS);
 Game.main();
-})({});
+})(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
