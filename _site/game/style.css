@@ -1,0 +1,46 @@
+@font-face {
+	font-family: Charter;
+	src: url(media/Charter-Regular.ttf);
+	font-weight: normal;
+}
+
+html{
+	background-color: black;
+	height: 100%;
+	padding: 0px;
+}
+
+body{
+	background-color: darkblue;
+	color: white;
+	width: 90%;
+	max-width: 600px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 0px;
+	top: 0px;
+	padding-top: 1px;
+	padding-left: 50px;
+	padding-right: 50px;
+	min-height: 100%;
+	box-sizing: border-box;
+}
+
+p{
+	text-align: justify;
+	font-family: Charter;
+}
+
+h1{
+	text-align: center;
+	font-family: Charter;
+}
+
+a{
+	color: orange;
+	text-decoration: none;
+}
+
+a:hover{
+	color: aliceblue;
+}
