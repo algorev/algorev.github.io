@@ -19,9 +19,9 @@
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 20px;
-  background-color: #5a5a5a;
-  border: 1px solid #5a5a5a;
-  box-shadow: 5px 5px 0px 0px black;
+  background-color: #1f4070;
+  border: 1px solid #78623b;
+  box-shadow: 5px 5px 0px 0px #0b1728;
 }
 
 button {
@@ -31,13 +31,13 @@ button {
 
 button.enabled {
   color: white;
-  background-color: #323232;
-  border: 2px solid gray;
+  background-color: #152c4c;
+  border: 2px solid #ab8d54;
 }
 
 button.disabled {
   color: white;
-  background-color: black;
+  background-color: #0b1728;
   /*border: 2px solid theme.$accent;*/
   filter: brightness(75%);
   border: 2px solid red;
@@ -48,7 +48,7 @@ button.enabled:hover {
 }
 
 button.enabled:active {
-  background-color: black;
+  background-color: #0b1728;
   color: lightgray;
 }
 
@@ -68,7 +68,7 @@ button.enabled:active {
 }
 
 .fulfilled {
-  border: 2px solid gray;
+  border: 2px solid #ab8d54;
 }
 
 .unfulfilled {
@@ -91,19 +91,19 @@ button.enabled:active {
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
-  background-color: #5a5a5a;
-  border: 1px solid #5a5a5a;
+  background-color: #1f4070;
+  border: 1px solid #78623b;
   margin-bottom: 10px;
   padding: 10px;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 5px 5px 0px 0px black;
+  box-shadow: 5px 5px 0px 0px #0b1728;
 }
 #results .consequence img {
   height: 40px;
   margin-right: 10px;
   box-sizing: content-box;
-  border: 2px solid gray;
+  border: 2px solid #ab8d54;
 }
 #results .consequence p {
   font-weight: bold;
@@ -111,18 +111,22 @@ button.enabled:active {
 #results button {
   float: right;
   margin-bottom: 10px;
-  background-color: black;
+  background-color: #0b1728;
   margin-top: 10px;
   margin-bottom: 10px;
 }
 #results button:hover {
-  background-color: #5a5a5a;
+  background-color: #1f4070;
 }
 
 #results::after {
   content: "";
   clear: both;
   display: table;
+}
+
+#tooltip {
+  position: absolute;
 }
 
 .container {
@@ -140,7 +144,10 @@ button.enabled:active {
 }
 
 #story {
-  background-color: black;
+  background-color: #0b1728;
+  background-image: url(assets/background.svg);
+  background-position: center top;
+  background-size: 100% auto;
   overflow-y: scroll;
   height: 100%;
   padding: 10px 20px 10px 20px;
@@ -169,14 +176,14 @@ button.enabled:active {
   margin-top: 40px;
   margin-left: auto;
   margin-right: auto;
-  background-color: #323232;
+  background-color: #152c4c;
   box-sizing: border-box;
   padding: 10px 10px 1px 10px;
-  border: 1px solid #5a5a5a;
+  border: 1px solid #78623b;
 }
 
 #inventory {
-  background-color: #5a5a5a;
+  background-color: #0b1728;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: repeat(8, 1fr);
   display: grid;
@@ -185,7 +192,10 @@ button.enabled:active {
 }
 
 .varimage {
-  margin: 5px;
+  margin: 5%;
+  height: 90%;
+  width: 90%;
+  border: 2px solid #ab8d54;
   /*margin-bottom: 10px;*/
 }
 
@@ -196,7 +206,7 @@ button.enabled:active {
   margin-right: auto;
   margin-top: 10px;
   margin-bottom: 20px;
-  background-color: #5a5a5a;
+  background-color: #1f4070;
 }
 
 * {
