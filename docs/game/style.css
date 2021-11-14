@@ -5,30 +5,40 @@
 }
 
 html{
-	background-color: black;
+	background-color: #0b1728;
 	height: 100%;
 	padding: 0px;
+  margin: 0px;
+  background-image: url("media/background.svg");
+  background-repeat: repeat-x;
+  background-attachment: center top;
 }
 
 body{
-	background-color: darkblue;
+  background-color: #0b1728;
 	color: white;
-	width: 90%;
-	max-width: 600px;
+	width: 50vw;
+	max-width: 1000px;
 	margin-left: auto;
 	margin-right: auto;
 	margin-top: 0px;
+  margin-bottom: 0px;
 	top: 0px;
-	padding-top: 1px;
+	padding-top: 2em;
 	padding-left: 50px;
 	padding-right: 50px;
+  padding-bottom: 20px;
 	min-height: 100%;
 	box-sizing: border-box;
+  border-left: 1px solid hsl(39, 34%, 50%);
+  border-right: 1px solid hsl(39, 34%, 50%);
 }
 
-p{
+p, li{
 	text-align: justify;
 	font-family: Charter;
+  font-size: 1.5em;
+  line-height: 1.5em;
 }
 
 h1{
@@ -37,10 +47,51 @@ h1{
 }
 
 a{
-	color: orange;
+	color: #ff9955;
 	text-decoration: none;
 }
 
 a:hover{
 	color: aliceblue;
+}
+
+p #jouer{
+    text-align: center;
+    font-size: 2em;
+    /*margin-left: auto;
+    margin-right: auto;*/
+    width: 100%;
+}
+
+#jouer{
+    width: 100px;
+    margin-left: calc(50% - 50px);
+    margin-right: calc(50% - 50px);
+}
+
+.centered{
+    width: 100%;
+    text-align: center;
+}
+
+img{
+    width: 100%;
+    border: 2px solid #ff9955;
+}
+
+.legend{
+    font-size: 1.2em;
+}
+
+ul{
+    width: 90%;
+}
+
+h2{
+    font-size: 1.7em;
+    font-family: Charter;
+}
+
+p~h2{
+    margin-top: 0px;
 }
