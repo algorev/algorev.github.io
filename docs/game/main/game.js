@@ -473,7 +473,7 @@ var Tooltip = function(props) {
 	React.Component.call(this,props);
 	this.state = null;
 	var body = window.document.getElementsByTagName("body")[0];
-	this.viewportDimensions = { x : body.clientWidth, y : body.clientHeight};
+	this.viewportDimensions = { x : body.clientWidth + 16, y : body.clientHeight + 16};
 };
 Tooltip.__name__ = true;
 Tooltip.__super__ = React.Component;
@@ -498,8 +498,12 @@ var CurrentView = $hxEnums["CurrentView"] = { __ename__:true,__constructs__:null
 };
 CurrentView.__constructs__ = [CurrentView.RoomView,CurrentView.ChoiceView];
 var VarImage = function(props) {
+	this.viewportDimensions = { x : 0, y : 0};
 	React.Component.call(this,props);
 	this.state = { showTooltip : false, pos : { x : 0, y : 0}};
+	var body = window.document.getElementsByTagName("body")[0];
+	this.viewportDimensions = { x : body.clientWidth + 16, y : body.clientHeight + 16};
+	this.current = body;
 };
 VarImage.__name__ = true;
 VarImage.__super__ = React.Component;
@@ -511,16 +515,23 @@ VarImage.prototype = $extend(React.Component.prototype,{
 		this.setState({ showTooltip : false});
 	}
 	,moveTooltip: function(event) {
-		this.setState({ showTooltip : true, pos : { x : event.pageX, y : event.pageY}});
+		if(this.current == null || event.pageX > this.current.getBoundingClientRect().left) {
+			this.setState({ showTooltip : true, pos : { x : event.pageX, y : event.pageY}});
+		} else {
+			this.setState({ showTooltip : false});
+		}
 	}
 	,render: function() {
 		var tooltip = { $$typeof : $$tre, type : "div", props : { }, key : null, ref : null};
+		var youAreTheOne = "";
 		if(this.state.showTooltip) {
 			tooltip = { $$typeof : $$tre, type : Tooltip, props : { text : this.props.desc, pos : this.state.pos}, key : null, ref : null};
+			youAreTheOne = "currentHovered";
+			this.current = window.document.getElementById("currentHovered");
 		} else {
 			tooltip = { $$typeof : $$tre, type : "div", props : { }, key : null, ref : null};
 		}
-		return { $$typeof : $$tre, type : "div", props : { onMouseMove : $bind(this,this.moveTooltip), onMouseLeave : $bind(this,this.deactivateTooltip), onMouseEnter : $bind(this,this.activateTooltip), children : [{ $$typeof : $$tre, type : "img", props : { src : this.props.source, className : this.props.cssClass}, key : null, ref : null},tooltip]}, key : null, ref : null};
+		return { $$typeof : $$tre, type : "div", props : { onMouseMove : $bind(this,this.moveTooltip), onMouseLeave : $bind(this,this.deactivateTooltip), onMouseEnter : $bind(this,this.activateTooltip), id : youAreTheOne, children : [{ $$typeof : $$tre, type : "img", props : { src : this.props.source, className : this.props.cssClass}, key : null, ref : null},tooltip]}, key : null, ref : null};
 	}
 });
 var VariablesPanel = function(props) {

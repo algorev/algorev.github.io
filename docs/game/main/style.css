@@ -127,6 +127,13 @@ button.enabled:active {
 
 #tooltip {
   position: absolute;
+  background-color: #0b1728;
+  color: #ab8d54;
+  border: 2px solid #ab8d54;
+  padding-left: 10px;
+  padding-right: 10px;
+  word-wrap: break-word;
+  max-width: 10em;
 }
 
 .container {
@@ -141,6 +148,11 @@ button.enabled:active {
   grid-template-columns: 80% 20%;
   grid-column-gap: 0em;
   grid-row-gap: 0em;
+}
+
+body {
+  overflow: hidden;
+  /* Maybe this will help fix the tooltip bugs. */
 }
 
 #story {
