@@ -44,7 +44,7 @@ button.disabled {
 }
 
 button.enabled:hover {
-  background-color: darkgray;
+  background-color: #1f4070;
 }
 
 button.enabled:active {
