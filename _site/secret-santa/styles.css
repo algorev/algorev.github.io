@@ -1,0 +1,210 @@
+body {
+    background-color: #101010;
+    color: #eeeeee;
+    font-family: sans-serif;
+}
+
+.nameBox, .groupNameBox {
+    height: 50px;
+    margin-top: 10px;
+    padding: 0px;
+    margin-bottom: 20px;
+    padding-left: 10px;
+    box-sizing: border-box;
+    border: none;
+}
+
+.nameBox:disabled, .groupNameBox:disabled {
+    color: #ffffff;
+    background-color: #888888;
+}
+
+.nameBoxFullWidth {
+    width: 100%;
+}
+
+.nameBoxPartWidth {
+    width: calc(100% - 150px);
+}
+
+.nameLine, .groupNameBox {
+    display: block;
+    width: 100%;
+}
+
+.groupChooser {
+    width: 150px;
+    height: 50px;
+    border-radius: 0%;
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+}
+
+.groupChooser:disabled {
+    color: #ffffff;
+    background-color: #888888;
+}
+
+#generateButton {
+    display: block;
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#addButton, #removeButton {
+    width: 50px;
+    padding: 0px;
+}
+
+#addButton {
+    float: left;
+    clear: left;
+}
+
+#removeButton {
+    float: right;
+    clear: right;
+}
+
+button {
+    border: 2px solid white;
+    background-color: #202020;
+    color: #eeeeee;
+    height: 50px;
+}
+
+button:hover:not(:disabled) {
+    background-color: #333333;
+}
+
+button:disabled {
+    background-color: #333333;
+    border: 2px solid #888888;
+    color: #888888;
+}
+
+#app {
+    margin-left: auto;
+    margin-right: auto;
+    width: 95%;
+    max-width: 400px;
+    overflow: visible;
+    overflow-wrap: break-word;
+}
+
+@keyframes target-reveal {
+    0% {
+        color: #101010;
+    }
+    100% {
+        color: #eeeeee;
+    }
+}
+
+#targetName {
+    /* color: #101010; */
+    animation: 2s ease-in-out 1s target-reveal;
+    animation-fill-mode: both;
+}
+
+blockquote {
+    font-family: monospace;
+    background-color: #eeeeee;
+    color: #101010;
+    border: 2px solid white;
+    width: 80%;
+    padding: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.giverName {
+    font-weight: bold;
+}
+
+h1, h2 {
+    width: 100%;
+    text-align: center;
+}
+
+#exclusionsCheckBoxBoundingBox {
+    display: flex;
+    clear: both;
+    height: 50px;
+    width: 100%;
+    margin-bottom: 20px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+#exclusionsCheckBox {
+    appearance: none;
+    height: 30px;
+    width: 30px;
+    margin: 10px;
+    border: 2px solid white;
+    background-color: #202020;
+}
+
+#exclusionsCheckBox:checked {
+    background-color: #eeeeee;
+}
+
+#exclusionsCheckBox:hover:not(:disabled) {
+    background-color: #333333;
+}
+
+#exclusionsCheckBox:hover:checked:not(:disabled) {
+    background-color: #cccccc;
+}
+
+#exclusionsCheckBox:disabled {
+    border: 2px solid #888888;
+    background-color: #333333;
+}
+
+#exclusionsCheckBox:checked:disabled {
+    background-color: #888888;
+}
+
+.labelDisabled {
+    color: #888888;
+}
+
+#groupEditor {
+    clear: both;
+    width: 75%;
+    min-width: 200px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+#groupEditorButtonLine {
+    clear: both;
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+}
+
+#groupAddButton, #groupRemoveButton {
+    width: 40px;
+    height: 40px;
+    padding: 0px;
+    margin: 5px;
+}
+
+#errorBox {
+    padding: 10px;
+    box-sizing: border-box;
+    width: 100%;
+    background-color: #ffbbbb;
+    color: #202020;
+    border: 2px solid #ff5555;
+    text-align: center;
+    margin-top: 20px;
+}
