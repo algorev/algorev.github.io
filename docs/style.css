@@ -1,5 +1,5 @@
 html {
-	background-color: goldenrod;
+	background-color: #25316A;
 }
 
 body {
@@ -17,4 +17,9 @@ h1 {
 h2, p {
 	font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 	font-size: large;
+	color: #DB9304;
+}
+
+a {
+	color: #DB7704;
 }
